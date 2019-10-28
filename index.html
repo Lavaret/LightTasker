@@ -3,8 +3,7 @@
 <head>
     <title>My first Vue app</title>
     <script src="https://unpkg.com/vue"></script>
-    <!-- Entire bundle; alternative when not using NPM -->
-    <script src="https://cdn.jsdelivr.net/npm/@shopify/draggable@1.0.0-beta.8/lib/draggable.bundle.js"></script>
+    <script src="https://unpkg.com/vue-draggable@1.0.9/lib/vue-draggable.js"></script>
 </head>
 <body>
 <div id="app">
@@ -12,51 +11,33 @@
         <input class="add border" v-model="taskTitle" @keyup.enter="addTask"/>
         <input class="add border" :placeholder="placeholder" v-model="taskDescription" @keyup.enter="addTask"/>
     </div>
-    <div class="wrapper">
+    <div class="wrapper" v-drag-and-drop:options="options">
         <div class="analysis column border">
             <p>{{ subtitle.analysis }}</p>
-            <div class="task border">
-                <div class="task-header">Default title</div>
+            <div v-for="task in analysisTasks" class="task border">
+                <div class="task-header">{{task.title}}</div>
                 <div class="task-description">
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut aliquam viverra rutrum. Proin purus orci, feugiat a commodo sed, malesuada id metus.
-                    Etiam lacinia dui ac libero convallis, varius consequat quam consectetur. Fusce sollicitudin ante tortor, maximus auctor purus condimentum vel.
-                    Etiam vitae enim ante. Nunc finibus iaculis quam quis suscipit. In eget sagittis mi. Nam mi lectus, elementum id arcu et, euismod laoreet massa.
-                </div>
-            </div>
-            <div class="task border">
-                <div class="task-header">Default title</div>
-                <div class="task-description">
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut aliquam viverra rutrum. Proin purus orci, feugiat a commodo sed, malesuada id metus.
-                    Etiam lacinia dui ac libero convallis, varius consequat quam consectetur. Fusce sollicitudin ante tortor, maximus auctor purus condimentum vel.
-                    Etiam vitae enim ante. Nunc finibus iaculis quam quis suscipit. In eget sagittis mi. Nam mi lectus, elementum id arcu et, euismod laoreet massa.
-                </div>
-            </div>
-            <div class="task border">
-                <div class="task-header">Default title</div>
-                <div class="task-description">
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut aliquam viverra rutrum. Proin purus orci, feugiat a commodo sed, malesuada id metus.
-                    Etiam lacinia dui ac libero convallis, varius consequat quam consectetur. Fusce sollicitudin ante tortor, maximus auctor purus condimentum vel.
-                    Etiam vitae enim ante. Nunc finibus iaculis quam quis suscipit. In eget sagittis mi. Nam mi lectus, elementum id arcu et, euismod laoreet massa.
-                </div>
-            </div>
-            <div class="task border">
-                <div class="task-header">Default title</div>
-                <div class="task-description">
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut aliquam viverra rutrum. Proin purus orci, feugiat a commodo sed, malesuada id metus.
-                    Etiam lacinia dui ac libero convallis, varius consequat quam consectetur. Fusce sollicitudin ante tortor, maximus auctor purus condimentum vel.
-                    Etiam vitae enim ante. Nunc finibus iaculis quam quis suscipit. In eget sagittis mi. Nam mi lectus, elementum id arcu et, euismod laoreet massa.
+                    {{ task.description }}
                 </div>
             </div>
         </div>
         <div class="development column border">
-            <p>
-                {{ subtitle.development }}
-            </p>
+            <p>{{ subtitle.development }}</p>
+            <div v-for="task in developmentTasks" class="task border">
+                <div class="task-header">{{task.title}}</div>
+                <div class="task-description">
+                    {{ task.description }}
+                </div>
+            </div>
         </div>
         <div class="finished column border">
-            <p>
-                {{ subtitle.finished }}
-            </p>
+            <p>{{ subtitle.finished }}</p>
+            <div v-for="task in finishedTasks" class="task border">
+                <div class="task-header">{{task.title}}</div>
+                <div class="task-description">
+                    {{ task.description }}
+                </div>
+            </div>
         </div>
     </div>
     <footer></footer>
@@ -67,23 +48,29 @@
     var taskStorage = {
         fetch: function () {
             var tasks = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-            console.log('in fetch taskStorage', tasks);
             tasks.forEach(function (task, index) {
                 task.id = index;
             });
             taskStorage.uid = tasks.length;
             return tasks;
         },
+        fetchFilter: function (stage) {
+            return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]').filter(STORAGE_KEY => STORAGE_KEY.stage === stage);
+        },
         save: function (tasks) {
-            console.log('saving local storage');
             localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks))
         }
     };
+
+    Vue.use(VueDraggable.default);
 
     var app = new Vue({
         el: '#app',
         data: {
             tasks: taskStorage.fetch(),
+            analysisTasks: taskStorage.fetchFilter(0),
+            developmentTasks: taskStorage.fetchFilter(1),
+            finishedTasks: taskStorage.fetchFilter(2),
             taskTitle: "Task #" + (taskStorage.fetch().length + 1),
             taskDescription: '',
             placeholder: 'Description',
@@ -92,13 +79,33 @@
                 development: 'Development',
                 finished: 'Finished'
             },
-            errors: []
+            errors: [],
+            options: {
+                dropzoneSelector: 'div.column',
+                draggableSelector: 'div.task',
+                showDropzoneAreas: true,
+                // multipleDropzonesItemsDraggingEnabled: true,
+                ondrop(event) {
+                    console.log('ondrop');
+                },
+                ondragenter(event) {
+                    // event.stop();
+                    console.log('whatever')
+                },
+                ondragend(event) {
+                    componentInstance.someDummyMethod();
+
+                    // to detect if draggable element is dropped out
+                    if (!event.droptarget) {
+                        console.log('event is dropped out');
+                    }
+                }
+            }
         },
 
         watch: {
             tasks: {
                 handler: function (tasks) {
-                    console.log('in watch handler');
                     taskStorage.save(tasks)
                 },
                 deep: true
@@ -122,9 +129,19 @@
                     stage: 0
                 });
 
+                this.analysisTasks.push({
+                    id: taskStorage.uid++,
+                    title: title,
+                    description: description,
+                    stage: 0
+                });
+
                 this.taskDescription = '';
                 this.taskTitle = "Task #" + (this.tasks.length + 1);
             },
+            someDummyMethod () {
+                console.log('Hello from someDummyMethod');
+            }
         }
     })
 </script>
@@ -136,6 +153,7 @@
         display: flex;
         justify-content: space-evenly;
         padding-bottom: 5vh;
+        margin-top: 30px;
     }
 
     .header {
@@ -205,6 +223,18 @@
 
     .task-description, .task-header {
         padding: 10px;
+    }
+
+    .analysis > div > .task-header {
+        border-bottom: 1px solid #E58B94;
+    }
+
+    .development > div > .task-header {
+        border-bottom: 1px solid #96BAD3;
+    }
+
+    .finished > div > .task-header {
+        border-bottom: 1px solid #9CCE84;
     }
 
 </style>
