@@ -15,7 +15,7 @@
     <div class="wrapper">
         <div class="analysis column border">
             <p>{{ subtitle.analysis }}</p>
-            <div v-for="task in tasks" class="task border">
+            <div v-for="task in analysisTasks" class="task border">
                 <div class="task-header">{{task.title}}</div>
                 <div class="task-description">
                     {{ task.description }}
@@ -23,14 +23,22 @@
             </div>
         </div>
         <div class="development column border">
-            <p>
-                {{ subtitle.development }}
-            </p>
+            <p>{{ subtitle.development }}</p>
+            <div v-for="task in developmentTasks" class="task border">
+                <div class="task-header">{{task.title}}</div>
+                <div class="task-description">
+                    {{ task.description }}
+                </div>
+            </div>
         </div>
         <div class="finished column border">
-            <p>
-                {{ subtitle.finished }}
-            </p>
+            <p>{{ subtitle.finished }}</p>
+            <div v-for="task in finishedTasks" class="task border">
+                <div class="task-header">{{task.title}}</div>
+                <div class="task-description">
+                    {{ task.description }}
+                </div>
+            </div>
         </div>
     </div>
     <footer></footer>
@@ -41,12 +49,14 @@
     var taskStorage = {
         fetch: function () {
             var tasks = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-            console.log('in fetch taskStorage', tasks);
             tasks.forEach(function (task, index) {
                 task.id = index;
             });
             taskStorage.uid = tasks.length;
             return tasks;
+        },
+        fetchFilter: function (stage) {
+            return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]').filter(STORAGE_KEY => STORAGE_KEY.stage === stage);
         },
         save: function (tasks) {
             console.log('saving local storage');
@@ -58,6 +68,9 @@
         el: '#app',
         data: {
             tasks: taskStorage.fetch(),
+            analysisTasks: taskStorage.fetchFilter(0),
+            developmentTasks: taskStorage.fetchFilter(1),
+            finishedTasks: taskStorage.fetchFilter(2),
             taskTitle: "Task #" + (taskStorage.fetch().length + 1),
             taskDescription: '',
             placeholder: 'Description',
