@@ -9,7 +9,7 @@
 <body>
 <div id="app">
     <div class="header">
-        <input class="add" :value="defaultTitle" @keyup.enter="addTask"/>
+        <input class="add" v-model="taskTitle" @keyup.enter="addTask"/>
         <input class="add" :placeholder="placeholder" v-model="taskDescription" @keyup.enter="addTask"/>
     </div>
     <div class="wrapper">
@@ -52,14 +52,15 @@
         el: '#app',
         data: {
             tasks: taskStorage.fetch(),
-            taskTitle: '',
+            taskTitle: "Task #" + (taskStorage.fetch().length + 1),
             taskDescription: '',
             placeholder: 'Description',
             subtitle: {
                 analysis: 'Analysis',
                 development: 'Development',
                 finished: 'Finished'
-            }
+            },
+            errors: []
         },
 
         watch: {
@@ -71,27 +72,27 @@
                 deep: true
             }
         },
-        computed: {
-            defaultTitle() {
-                let taskNumber = this.tasks.length;
-                return "Task #" + taskNumber;
-            }
-        },
         methods: {
             addTask: function () {
-                var value = this.newTask && this.newTask.trim();
-                console.log('add task method fired, value: ', value);
-                if (!value) {
+                try {
+                    var title = this.taskTitle && this.taskTitle.trim();
+                } catch (e) {
+                    this.errors.add(e);
                     return;
                 }
-                console.log('push value to tasks: ', this.tasks);
+
+                var description = this.taskDescription && this.taskDescription.trim();
+
                 this.tasks.push({
                     id: taskStorage.uid++,
-                    title: value,
+                    title: title,
+                    description: description,
                     stage: 0
                 });
-                this.newTask = '';
-            }
+
+                this.taskDescription = '';
+                this.taskTitle = "Task #" + (this.tasks.length + 1);
+            },
         }
     })
 </script>
