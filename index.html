@@ -9,8 +9,8 @@
 <body>
 <div id="app">
     <div class="header">
-        <input class="add" :value="defaultTitle" v-model="newTaskTitle" @keyup.enter="addTask"/>
-        <input class="add" :placeholder="placeholder" v-model="newTaskDescription" @keyup.enter="addTask"/>
+        <input class="add" :value="defaultTitle" @keyup.enter="addTask"/>
+        <input class="add" :placeholder="placeholder" v-model="taskDescription" @keyup.enter="addTask"/>
     </div>
     <div class="wrapper">
         <div class="analysis column">
@@ -74,7 +74,7 @@
         computed: {
             defaultTitle() {
                 let taskNumber = this.tasks.length;
-                console.log(taskNumber);
+                return "Task #" + taskNumber;
             }
         },
         methods: {
@@ -136,7 +136,8 @@
 
     input::placeholder {
         letter-spacing: 2px;
-        color: rgba(0,0,0,0.5);
+        color: rgba(0,0,0,0.3);
+        font-style: italic;
     }
 
     footer {
