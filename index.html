@@ -12,16 +12,17 @@
         <input class="add border" :placeholder="placeholder" v-model="taskDescription" @keyup.enter="addTask"/>
     </div>
     <div class="wrapper" v-drag-and-drop:options="options">
-        <div class="analysis column border">
+        <div stage="0" class="analysis column border">
             <p>{{ subtitle.analysis }}</p>
-            <div v-for="task in analysisTasks" class="task border">
+            <div v-for="task in analysisTasks" :key="task.id" class="task border">
+                <div :id="task.id"></div>
                 <div class="task-header">{{task.title}}</div>
                 <div class="task-description">
                     {{ task.description }}
                 </div>
             </div>
         </div>
-        <div class="development column border">
+        <div stage="1" class="development column border">
             <p>{{ subtitle.development }}</p>
             <div v-for="task in developmentTasks" class="task border">
                 <div class="task-header">{{task.title}}</div>
@@ -30,7 +31,7 @@
                 </div>
             </div>
         </div>
-        <div class="finished column border">
+        <div stage="2" class="finished column border">
             <p>{{ subtitle.finished }}</p>
             <div v-for="task in finishedTasks" class="task border">
                 <div class="task-header">{{task.title}}</div>
@@ -84,22 +85,9 @@
                 dropzoneSelector: 'div.column',
                 draggableSelector: 'div.task',
                 showDropzoneAreas: true,
-                // multipleDropzonesItemsDraggingEnabled: true,
-                ondrop(event) {
-                    console.log('ondrop');
+                onDrop(event) {
+                    console.log(event);
                 },
-                ondragenter(event) {
-                    // event.stop();
-                    console.log('whatever')
-                },
-                ondragend(event) {
-                    componentInstance.someDummyMethod();
-
-                    // to detect if draggable element is dropped out
-                    if (!event.droptarget) {
-                        console.log('event is dropped out');
-                    }
-                }
             }
         },
 
@@ -138,9 +126,6 @@
 
                 this.taskDescription = '';
                 this.taskTitle = "Task #" + (this.tasks.length + 1);
-            },
-            someDummyMethod () {
-                console.log('Hello from someDummyMethod');
             }
         }
     })
