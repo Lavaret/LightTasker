@@ -8,8 +8,8 @@
 <body>
 <div id="app">
     <div class="header">
-        <input class="add border" v-model="taskTitle" @keyup.enter="addTask"/>
-        <input class="add border" :placeholder="placeholder" v-model="taskDescription" @keyup.enter="addTask"/>
+        <input class="add simple-element border" v-model="taskTitle" @keyup.enter="addTask"/>
+        <input class="add simple-element border" :placeholder="placeholder" v-model="taskDescription" @keyup.enter="addTask"/>
     </div>
     <div class="wrapper" v-drag-and-drop:options="options">
         <div stage="0" class="analysis column border">
@@ -40,7 +40,9 @@
             </div>
         </div>
     </div>
-    <footer></footer>
+    <footer>
+        <button class="simple-element clear-tasks border" @click="clearTable">Clear tasks</button>
+    </footer>
 </div>
 
 <script>
@@ -105,9 +107,6 @@
                 },
                 deep: true
             },
-            task() {
-                console.log('Collection updated!');
-            }
         },
         methods: {
             addTask: function () {
@@ -136,6 +135,15 @@
 
                 this.taskDescription = '';
                 this.taskTitle = "Task #" + (this.tasks.length + 1);
+            },
+            clearTable() {
+                if (confirm('Are you sure you want remove all tasks?')) {
+                    this.analysisTasks = [];
+                    this.developmentTasks = [];
+                    this.finishedTasks = [];
+                    this.taskTitle = "Task #1";
+                    localStorage.clear();
+                }
             }
         }
     })
@@ -144,30 +152,19 @@
 <style>
     .wrapper {
         width: 100%;
-        min-height: 80vh;
+        min-height: 70vh;
         display: flex;
         justify-content: space-evenly;
-        padding-bottom: 5vh;
-        margin-top: 30px;
     }
 
     .header {
         margin: 10px;
-        height: 15vh;
+        height: 130px;
         text-align: center;
     }
 
     input.add {
-        width: 98%;
-        height: 40px;
-        font-size: 30px;
-        background: transparent;
-        font-weight: lighter;
         text-align: left;
-        letter-spacing: 2px;
-        color: rgba(0,0,0,0.5);
-        margin-top: 10px;
-        padding: 10px;
     }
 
     input:focus {
@@ -181,9 +178,37 @@
     }
 
     footer {
-        height: 40px;
+        text-align: center;
         width: 100%;
-        background-color: black;
+        background-color: transparent;
+    }
+
+    .clear-tasks {
+        height: 50px;
+    }
+
+    button {
+        outline-style: none;
+    }
+
+    button.clear-tasks:hover {
+        background-color: #eee;
+        cursor: pointer;
+    }
+
+    button.clear-tasks:active {
+        background-color: #ddd;
+    }
+
+    .simple-element {
+        width: 98%;
+        font-size: 30px;
+        background: transparent;
+        font-weight: lighter;
+        letter-spacing: 2px;
+        color: rgba(0,0,0,0.5);
+        margin-top: 10px;
+        padding: 10px;
     }
 
     .column {
