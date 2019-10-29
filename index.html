@@ -14,8 +14,7 @@
     <div class="wrapper" v-drag-and-drop:options="options">
         <div stage="0" class="analysis column border">
             <p>{{ subtitle.analysis }}</p>
-            <div v-for="task in analysisTasks" :key="task.id" class="task border">
-                <div :id="task.id"></div>
+            <div v-for="task in analysisTasks" :taskId="task.id" class="task border">
                 <div class="task-header">{{task.title}}</div>
                 <div class="task-description">
                     {{ task.description }}
@@ -24,7 +23,7 @@
         </div>
         <div stage="1" class="development column border">
             <p>{{ subtitle.development }}</p>
-            <div v-for="task in developmentTasks" class="task border">
+            <div v-for="task in developmentTasks" :taskId="task.id" class="task border">
                 <div class="task-header">{{task.title}}</div>
                 <div class="task-description">
                     {{ task.description }}
@@ -33,7 +32,7 @@
         </div>
         <div stage="2" class="finished column border">
             <p>{{ subtitle.finished }}</p>
-            <div v-for="task in finishedTasks" class="task border">
+            <div v-for="task in finishedTasks" :taskId="task.id" class="task border">
                 <div class="task-header">{{task.title}}</div>
                 <div class="task-description">
                     {{ task.description }}
@@ -54,6 +53,9 @@
             });
             taskStorage.uid = tasks.length;
             return tasks;
+        },
+        update: function(id, stage) {
+
         },
         fetchFilter: function (stage) {
             return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]').filter(STORAGE_KEY => STORAGE_KEY.stage === stage);
@@ -86,7 +88,12 @@
                 draggableSelector: 'div.task',
                 showDropzoneAreas: true,
                 onDrop(event) {
-                    console.log(event);
+                    let stage = event.droptarget.attributes.getNamedItem('stage').value;
+                    let taskId = event.items[0].attributes.getNamedItem('taskId').value;
+
+                    let tasks = taskStorage.fetch();
+                    tasks[taskId].stage = parseInt(stage);
+                    taskStorage.save(tasks);
                 },
             }
         },
@@ -97,6 +104,9 @@
                     taskStorage.save(tasks)
                 },
                 deep: true
+            },
+            task() {
+                console.log('Collection updated!');
             }
         },
         methods: {
