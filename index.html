@@ -3,31 +3,46 @@
 <head>
     <title>My first Vue app</title>
     <script src="https://unpkg.com/vue"></script>
-    <!-- Entire bundle; alternative when not using NPM -->
-    <script src="https://cdn.jsdelivr.net/npm/@shopify/draggable@1.0.0-beta.8/lib/draggable.bundle.js"></script>
+    <script src="https://unpkg.com/vue-draggable@1.0.9/lib/vue-draggable.js"></script>
 </head>
 <body>
 <div id="app">
     <div class="header">
-        <input class="add" :value="defaultTitle" v-model="newTaskTitle" @keyup.enter="addTask"/>
-        <input class="add" :placeholder="placeholder" v-model="newTaskDescription" @keyup.enter="addTask"/>
+        <input class="add simple-element border" v-model="taskTitle" @keyup.enter="addTask"/>
+        <input class="add simple-element border" :placeholder="placeholder" v-model="taskDescription" @keyup.enter="addTask"/>
     </div>
-    <div class="wrapper">
-        <div class="analysis column">
+    <div class="wrapper" v-drag-and-drop:options="options">
+        <div stage="0" class="analysis column border">
             <p>{{ subtitle.analysis }}</p>
+            <div v-for="task in analysisTasks" :taskId="task.id" class="task border">
+                <div class="task-header">{{task.title}}</div>
+                <div class="task-description">
+                    {{ task.description }}
+                </div>
+            </div>
         </div>
-        <div class="development column">
-            <p>
-                {{ subtitle.development }}
-            </p>
+        <div stage="1" class="development column border">
+            <p>{{ subtitle.development }}</p>
+            <div v-for="task in developmentTasks" :taskId="task.id" class="task border">
+                <div class="task-header">{{task.title}}</div>
+                <div class="task-description">
+                    {{ task.description }}
+                </div>
+            </div>
         </div>
-        <div class="finished column">
-            <p>
-                {{ subtitle.finished }}
-            </p>
+        <div stage="2" class="finished column border">
+            <p>{{ subtitle.finished }}</p>
+            <div v-for="task in finishedTasks" :taskId="task.id" class="task border">
+                <div class="task-header">{{task.title}}</div>
+                <div class="task-description">
+                    {{ task.description }}
+                </div>
+            </div>
         </div>
     </div>
-    <footer></footer>
+    <footer>
+        <button class="simple-element clear-tasks border" @click="clearTable">Clear tasks</button>
+    </footer>
 </div>
 
 <script>
@@ -35,62 +50,100 @@
     var taskStorage = {
         fetch: function () {
             var tasks = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-            console.log('in fetch taskStorage', tasks);
             tasks.forEach(function (task, index) {
                 task.id = index;
             });
             taskStorage.uid = tasks.length;
             return tasks;
         },
+        update: function(id, stage) {
+
+        },
+        fetchFilter: function (stage) {
+            return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]').filter(STORAGE_KEY => STORAGE_KEY.stage === stage);
+        },
         save: function (tasks) {
-            console.log('saving local storage');
             localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks))
         }
     };
+
+    Vue.use(VueDraggable.default);
 
     var app = new Vue({
         el: '#app',
         data: {
             tasks: taskStorage.fetch(),
-            taskTitle: '',
+            analysisTasks: taskStorage.fetchFilter(0),
+            developmentTasks: taskStorage.fetchFilter(1),
+            finishedTasks: taskStorage.fetchFilter(2),
+            taskTitle: "Task #" + (taskStorage.fetch().length + 1),
             taskDescription: '',
             placeholder: 'Description',
             subtitle: {
                 analysis: 'Analysis',
                 development: 'Development',
                 finished: 'Finished'
+            },
+            errors: [],
+            options: {
+                dropzoneSelector: 'div.column',
+                draggableSelector: 'div.task',
+                showDropzoneAreas: true,
+                onDrop(event) {
+                    let stage = event.droptarget.attributes.getNamedItem('stage').value;
+                    let taskId = event.items[0].attributes.getNamedItem('taskId').value;
+
+                    let tasks = taskStorage.fetch();
+                    tasks[taskId].stage = parseInt(stage);
+                    taskStorage.save(tasks);
+                },
             }
         },
 
         watch: {
             tasks: {
                 handler: function (tasks) {
-                    console.log('in watch handler');
                     taskStorage.save(tasks)
                 },
                 deep: true
-            }
-        },
-        computed: {
-            defaultTitle() {
-                let taskNumber = this.tasks.length;
-                console.log(taskNumber);
-            }
+            },
         },
         methods: {
             addTask: function () {
-                var value = this.newTask && this.newTask.trim();
-                console.log('add task method fired, value: ', value);
-                if (!value) {
+                try {
+                    var title = this.taskTitle && this.taskTitle.trim();
+                } catch (e) {
+                    this.errors.add(e);
                     return;
                 }
-                console.log('push value to tasks: ', this.tasks);
+
+                var description = this.taskDescription && this.taskDescription.trim();
+
                 this.tasks.push({
                     id: taskStorage.uid++,
-                    title: value,
+                    title: title,
+                    description: description,
                     stage: 0
                 });
-                this.newTask = '';
+
+                this.analysisTasks.push({
+                    id: taskStorage.uid++,
+                    title: title,
+                    description: description,
+                    stage: 0
+                });
+
+                this.taskDescription = '';
+                this.taskTitle = "Task #" + (this.tasks.length + 1);
+            },
+            clearTable() {
+                if (confirm('Are you sure you want remove all tasks?')) {
+                    this.analysisTasks = [];
+                    this.developmentTasks = [];
+                    this.finishedTasks = [];
+                    this.taskTitle = "Task #1";
+                    localStorage.clear();
+                }
             }
         }
     })
@@ -99,35 +152,19 @@
 <style>
     .wrapper {
         width: 100%;
-        min-height: 80vh;
-        background-color: aliceblue;
+        min-height: 70vh;
         display: flex;
         justify-content: space-evenly;
-        align-items: center;
-        color: rgba(0,0,0,0.5);
-        padding-bottom: 5vh;
     }
 
     .header {
-        height: 15vh;
-        width: 100%;
-        background-color: aliceblue;
+        margin: 10px;
+        height: 130px;
         text-align: center;
     }
 
     input.add {
-        width: 93vw;
-        height: 40px;
-        font-size: 30px;
-        background: transparent;
-        font-weight: lighter;
-        border: 1px solid rgba(0,0,0,0.5);
-        border-radius: 10px;
         text-align: left;
-        letter-spacing: 2px;
-        color: rgba(0,0,0,0.5);
-        margin-top: 10px;
-        padding-left: 10px;
     }
 
     input:focus {
@@ -136,42 +173,90 @@
 
     input::placeholder {
         letter-spacing: 2px;
-        color: rgba(0,0,0,0.5);
+        color: rgba(0,0,0,0.3);
+        font-style: italic;
     }
 
     footer {
-        height: 40px;
+        text-align: center;
         width: 100%;
-        background-color: black;
+        background-color: transparent;
+    }
+
+    .clear-tasks {
+        height: 50px;
+    }
+
+    button {
+        outline-style: none;
+    }
+
+    button.clear-tasks:hover {
+        background-color: #eee;
+        cursor: pointer;
+    }
+
+    button.clear-tasks:active {
+        background-color: #ddd;
+    }
+
+    .simple-element {
+        width: 98%;
+        font-size: 30px;
+        background: transparent;
+        font-weight: lighter;
+        letter-spacing: 2px;
+        color: rgba(0,0,0,0.5);
+        margin-top: 10px;
+        padding: 10px;
     }
 
     .column {
-        width: 30vw;
-        height: 90vh;
+        flex: 1;
+        margin: 10px;
         background-color: transparent;
-        border: 1px solid rgba(0,0,0,0.5);
-        border-radius: 10px;
+        font: 16px bold, sans-serif;
+        color: rgba(0,0,0,0.5);
     }
 
     .column > p {
         text-align: center;
         letter-spacing: 2px;
         text-transform: uppercase;
-        font: 16px bold, sans-serif;
-
     }
 
-    .analysis {
-
+    .task {
+        margin: 10px;
     }
 
-    .development {
-
+    .border {
+        border: 1px solid rgba(0,0,0,.5);
+        border-radius: 5px;
     }
 
-    .finished {
-
+    .task-header {
+        text-align: center;
+        color: rgba(0,0,0,.8);
+        font-size: 20px;
+        border-bottom: 1px solid rgba(0,0,0,.1);
     }
+
+    .task-description, .task-header {
+        padding: 10px;
+    }
+
+    .analysis > div > .task-header {
+        border-bottom: 1px solid #E58B94;
+    }
+
+    .development > div > .task-header {
+        border-bottom: 1px solid #96BAD3;
+    }
+
+    .finished > div > .task-header {
+        border-bottom: 1px solid #9CCE84;
+    }
+
 </style>
 </body>
 </html>
